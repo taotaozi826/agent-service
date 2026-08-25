@@ -1,14 +1,15 @@
-from sqlalchemy import Sequence
+from typing import Sequence
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.product.models import Product
-from app.modules.product.repository import ProductRepository
+from .models import Product
+from .repository import ProductRepository
 
 
 class ProductService:
     def __init__(self, session: AsyncSession):
         self.session = session
-        self.repository = ProductRepository(self.session)
+        self.repository = ProductRepository(session)
 
-    def list_products(self,category: str | None) -> Sequence[Product]:
-        return self.repository.get_all_products(category)
+    async def list_products(self, category: str | None) -> Sequence[Product]:
+        return await self.repository.get_product_list(category)
