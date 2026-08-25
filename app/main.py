@@ -43,6 +43,11 @@ async def health_check() -> dict[str, str]:
     logger.info("执行健康检查")
     return {"status": "ok"}
 
+from app.modules.product.router import router as product_router
+
+# 创建 app 后注册路由
+app.include_router(product_router)
+
 
 if __name__ == "__main__":
     uvicorn.run(
