@@ -1,15 +1,19 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger
 import uvicorn
 
+from app.core.exceptions import ApplicationError
+
 # 初始化日志系统
 configure_logging(settings.logging.level)
 logger = get_logger(__name__)
+
 
 # 生命周期管理（预留）
 @asynccontextmanager
@@ -22,6 +26,7 @@ async def lifespan(app: FastAPI):
     finally:
         logger.info("应用关闭中... ")
         await close_database()
+
 
 app = FastAPI(
     title=settings.app.name,
@@ -38,16 +43,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.exception_handler(ApplicationError)
+async def handle_application_error(
+        request: Request,
+        exc: ApplicationError,  # 捕获到的异常（这里用自定义异常基类捕获，所有业务异常都会匹配到）
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,  # 异常中自带status
+        content={
+            "code": exc.code,  # 异常中自带code
+            "message": exc.message,  # 异常中自带message
+        },
+    )
+
+
 @app.get("/health", summary="健康检测接口")
 async def health_check() -> dict[str, str]:
     logger.info("执行健康检查")
     return {"status": "ok"}
 
+
+# 产品路由
 from app.modules.product.router import router as product_router
+# 会话路由
+from app.modules.chat_thread.router import router as chat_thread_router
 
 # 创建 app 后注册路由
 app.include_router(product_router)
-
+app.include_router(chat_thread_router)
 
 if __name__ == "__main__":
     uvicorn.run(
