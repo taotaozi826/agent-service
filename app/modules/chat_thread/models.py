@@ -1,5 +1,4 @@
 import uuid
-
 from sqlalchemy import BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -11,6 +10,7 @@ class ChatThread(Base, CreateAtMixin, UpdateAtMixin):
 
     id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True,
+        default=uuid.uuid4,
         comment="会话主键，同时作为 LangGraph thread_id"
     )
     user_id: Mapped[int] = mapped_column(
