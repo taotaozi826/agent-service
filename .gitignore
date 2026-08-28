@@ -1,0 +1,17 @@
+# 环境变量密钥文件
+.env
+
+# python虚拟环境
+.venv/
+venv/
+
+# IDE
+.idea/
+*.iml
+
+# 缓存
+__pycache__/
+*.pyc
+
+# 笔记本输出
+*.ipynb_checkpoints
