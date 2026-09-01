@@ -11,11 +11,11 @@ class ThreadRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    # 新增会话
+    # 1.新增会话
     async def add_thread(self, chat_thread: ChatThread):
         self.session.add(chat_thread)
 
-    # 查询会话列表
+    # 2.查询会话列表
     async def thread_list(self, user_id: int) -> list[ChatThread]:
         res = await  self.session.execute(
             select(ChatThread)
@@ -24,7 +24,7 @@ class ThreadRepository:
         )
         return list(res.scalars().all())
 
-    # 重命名 查找到orm对象返回让业务层修改
+    # 3.重命名 查找到orm对象返回让业务层修改
     async def thread_find(self, user_id: int, thread_id: UUID) -> ChatThread | None:
         res = await self.session.execute(
             select(ChatThread)
@@ -32,6 +32,6 @@ class ThreadRepository:
         )
         return res.scalar_one_or_none()
 
-    # 删除会话
+    # 4.删除会话
     async def thread_delete(self, chat_thread: ChatThread):
         await self.session.delete(chat_thread)

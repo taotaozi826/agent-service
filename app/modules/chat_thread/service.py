@@ -12,7 +12,7 @@ class ThreadService:
         self.session = session
         self.thread_repository = ThreadRepository(self.session)
 
-    # 创建会话
+    # 1.创建会话
     async def add_thread(self, title: str, user_id: int):
         async with self.session.begin():
             thread = ChatThread(title=title, user_id=user_id)
@@ -20,12 +20,12 @@ class ThreadService:
 
         return thread
 
-    # 查询所有会话列表
+    # 2.查询所有会话列表
     async def thread_list(self, user_id: int) -> list[ChatThread]:
         res = await self.thread_repository.thread_list(user_id)
         return res
 
-    # 重命名
+    # 3.重命名
     async def thread_rename(self, user_id: int, thread_id: UUID, title: str) -> ChatThread:
         async with self.session.begin():
             res = await self.thread_repository.thread_find(user_id, thread_id)
@@ -38,7 +38,7 @@ class ThreadService:
 
         return res
 
-    # 删除会话
+    # 4.删除会话
     async def thread_delete(self, user_id: int, thread_id: UUID):
         async with self.session.begin():
             res = await self.thread_repository.thread_find(user_id, thread_id)

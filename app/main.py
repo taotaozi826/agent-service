@@ -43,7 +43,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+# 全局异常处理
 @app.exception_handler(ApplicationError)
 async def handle_application_error(
         request: Request,
