@@ -18,18 +18,18 @@ class ProductService:
 
     # 2.获取多个分类列表
     async def list_candidates(
-        self,
-        categories: list[str],
-        premium_min: Decimal | None,
-        limit_per_category: int,
-    ) -> Sequence[Product]:
+            self,
+            categories: list[str],
+            premium_min: Decimal | None,
+            limit_per_category: int,
+    ) -> list[Product]:
         candidate_products: list[Product] = []
 
         for category in dict.fromkeys(categories):
-            products = await self.repository.get_product_limit_list(
+            products = await self.repository.find_limited_by_category(
                 category=category,
                 premium_min=premium_min,
-                limit_per_category=limit_per_category,
+                limit=limit_per_category,
             )
             candidate_products.extend(products)
 
