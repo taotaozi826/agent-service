@@ -22,7 +22,7 @@ async def get_service(
 
 
 # 1.新建会话
-@router.post('', summary='创建会话', response_model=ChatThreadCreateRequest)
+@router.post('', summary='创建会话', response_model=ChatThreadResponse)
 async def create_chat_thread(
         body: ChatThreadCreateRequest,
         user_id: int = Header(alias="x-user-id"),

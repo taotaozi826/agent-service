@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .schemas import ChatRequest
 from app.modules.chat_thread.repository import ChatThreadRepository
 from app.modules.chat_thread.exceptions import ChatThreadNotFoundError
+from app.agents.schemas import InsuranceAgentContext
 
 
 class ChatService:
@@ -53,8 +54,14 @@ class ChatService:
             "messages": [HumanMessage(request.message)]
         }
         _config = RunnableConfig(configurable={'thread_id': str(request.thread_id)})
+        context = InsuranceAgentContext(user_id=user_id)
 
-        stream = await self.agent.astream_events(input=_input, config=_config, version='v3')
+        stream = await self.agent.astream_events(
+            input=_input,
+            config=_config,
+            version='v3',
+            context=context
+        )
 
         async for message in stream.messages:
             async for text in message.text:

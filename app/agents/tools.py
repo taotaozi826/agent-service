@@ -2,8 +2,12 @@ from typing import Literal
 
 from fastapi.encoders import jsonable_encoder
 from langchain_core.tools import tool
+from langgraph.prebuilt import ToolRuntime
 
+from .schemas import InsuranceAgentContext
 from app.infra.database import AsyncSessionFactory
+from app.modules.insurance_plan.schemas import InsurancePlanCreate
+from app.modules.insurance_plan.service import InsurancePlanService
 from app.modules.product.models import Product
 from app.modules.product.service import ProductService
 
@@ -57,4 +61,26 @@ async def query_candidate_products(
 
         return [ProductItemResponse.model_validate(product) for product in products]
 
+@tool
+async def save_insurance_plan(
+        data: InsurancePlanCreate,
+        runtime:ToolRuntime[InsuranceAgentContext]
+)-> dict[str, str]:
+    """
+    保存当前用户的保险推荐方案
+    当用户确认这个方案可以或者满意的情况下调用此工具完成保险方案保存
+    :param data:保险方案数据
+    :param runtime:
+    :return:
+    """
+    async with AsyncSessionFactory() as session:
+        # 创建业务层对象
+        insurance_plan_service  = InsurancePlanService(session)
+        # 调用业务层完成保险方案保存
+        plan_id = await insurance_plan_service.create_plan(
+            user_id=runtime.context.user_id,
+            data=data
+        )
+
+        return  {'plan_id': str(plan_id), 'message': '保险方案保存成功'}
 

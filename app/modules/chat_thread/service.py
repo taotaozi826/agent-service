@@ -27,7 +27,7 @@ class ChatThreadService:
             # 新增对象，就是插入一条数据
             await self.repository.add(chat_thread)
 
-            return chat_thread
+        return chat_thread
 
     # 2.根据用户id查询所有会话
     async def list_by_user(self, user_id: int):
