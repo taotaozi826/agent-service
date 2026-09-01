@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -21,3 +22,15 @@ class ChatThreadResponse(BaseModel):
     updated_at: datetime = Field(description="更新时间")
 
     model_config = {"from_attributes": True}
+
+
+# 下面是对话消息
+"""历史消息"""
+class ChatMessageResponse(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+"""会话历史响应"""
+class ChatHistoryResponse(BaseModel):
+    thread_id: UUID
+    messages: list[ChatMessageResponse]

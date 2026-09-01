@@ -1,12 +1,24 @@
+from typing import Annotated
 from uuid import UUID
-from fastapi import APIRouter, Header, Depends, Response, status
+from fastapi import APIRouter, Header, Depends, Response, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .schemas import ChatThreadCreateRequest, ChatThreadResponse
+from .schemas import ChatThreadCreateRequest, ChatThreadResponse, ChatHistoryResponse
 from .service import ChatThreadService
 from ...infra.database import get_session
 
 router = APIRouter(prefix='/api/v1/chat-threads', tags=['会话管理'])
+
+
+# 定义业务层的service实例, 这样每个路由不用重复定义创建
+async def get_service(
+        request: Request,
+        session: AsyncSession = Depends(get_session),
+) -> ChatThreadService:
+    return ChatThreadService(
+        session=session,
+        agent=request.app.state.agent,
+    )
 
 
 # 1.新建会话
@@ -14,9 +26,8 @@ router = APIRouter(prefix='/api/v1/chat-threads', tags=['会话管理'])
 async def create_chat_thread(
         body: ChatThreadCreateRequest,
         user_id: int = Header(alias="x-user-id"),
-        session: AsyncSession = Depends(get_session),
+        service: ChatThreadService = Depends(get_service),
 ):
-    service = ChatThreadService(session)
     return await service.add(user_id, body.title)
 
 
@@ -24,9 +35,8 @@ async def create_chat_thread(
 @router.get('', summary='查询会话列表', response_model=list[ChatThreadResponse])
 async def list_chat_threads(
         user_id: int = Header(alias="x-user-id"),
-        session: AsyncSession = Depends(get_session),
+        service: ChatThreadService = Depends(get_service),
 ):
-    service = ChatThreadService(session)
     return await service.list_by_user(user_id)
 
 
@@ -36,9 +46,8 @@ async def rename_thread(
         body: ChatThreadCreateRequest,
         thread_id: UUID,
         user_id: int = Header(alias="x-user-id"),
-        session: AsyncSession = Depends(get_session),
+        service: ChatThreadService = Depends(get_service),
 ):
-    service = ChatThreadService(session)
     return await service.rename(user_id, thread_id, body.title)
 
 
@@ -47,8 +56,19 @@ async def rename_thread(
 async def del_thread(
         thread_id: UUID,
         user_id: int = Header(alias="x-user-id"),
-        session: AsyncSession = Depends(get_session),
+        service: ChatThreadService = Depends(get_service),
 ):
-    service = ChatThreadService(session)
     await service.delete_thread(user_id, thread_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# 5.查询会话历史
+@router.get("/{thread_id}/messages", response_model=ChatHistoryResponse)
+async def get_chat_history(
+        thread_id: UUID,
+        user_id: Annotated[int, Header(alias="x-user-id")],
+        service: ChatThreadService = Depends(get_service),
+):
+    """查询指定会话的历史消息"""
+
+    return await service.get_history(user_id, thread_id)

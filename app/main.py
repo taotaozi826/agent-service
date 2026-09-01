@@ -1,14 +1,17 @@
+import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.agents.insurance_advisor import init_insurance_agent
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger
 import uvicorn
 
 from app.core.exceptions import ApplicationError
+from app.infra.checkpointer import init_checkpointer, close_checkpointer
 
 # 初始化日志系统
 configure_logging(settings.logging.level)
@@ -19,11 +22,22 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     logger.info(f"【{settings.app.name}】应用启动中...")
     from app.infra.database import check_database, close_database
+
     try:
+        # 1.检查业务数据库连接
         await check_database()
+        # 2.初始化checkpointer
+        checkpointer = await init_checkpointer()
+        # 3.初始化保险顾问Agent
+        agent = init_insurance_agent(checkpointer)
+        # 将agent对象保存到app.state中
+        app.state.agent = agent
         yield
     finally:
         logger.info("应用关闭中... ")
+        # 4.关闭checkpointer连接池
+        await close_checkpointer()
+        # 5.关闭SQLAlchemy连接池
         await close_database()
 
 
@@ -69,10 +83,15 @@ app.include_router(product_router)
 from app.modules.chat_thread.router import router as chat_thread_router
 app.include_router(chat_thread_router)
 
+# 引入聊天chat路由
+from app.modules.chat.router import router as chat_router
+app.include_router(chat_router)
+
 if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host=settings.app.host,
         port=settings.app.port,
-        reload=False
+        reload=False,
+        loop="asyncio:SelectorEventLoop" if sys.platform == "win32" else "auto",
     )
